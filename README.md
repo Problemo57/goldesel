@@ -81,13 +81,13 @@ Klicke auf den Link, um das Gerät mit deinem Konto zu verbinden.
 ### Mysterium
 Bei Mysterium musst du die Weboberfläche aufruffen und die Node konfigurieren.
 
-http://<your-ip>:4449
+http://\<your-ip\>:4449
 
 
 ## Dashboard
 Das Web Dashboard mit der Übersicht über die Dienste ist hier zu finden:
 
-http://<your-ip>:6868
+http://\<your-ip\>:6868
 
 Das CLI Dashboard ist via diesem Befehl aufrufbar:
 ```bash
