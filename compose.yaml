@@ -1,0 +1,174 @@
+x-default-flags: &default-flags
+  restart: always
+  volumes:
+    - $NETWORK_MEASURE_MOUNT:/var/lib/goldesel
+  depends_on:
+    - geld_manager
+  labels:
+    - "autoheal-app=true"
+
+x-default-watchtower: &default-watchtower
+  <<: *default-flags
+  labels:
+    - "com.centurylinklabs.watchtower.enable=true"
+    - "autoheal-app=true"
+
+services:
+
+  geld_manager:
+    build:
+      context: geld_manager
+    restart: always
+    volumes:
+      - $NETWORK_MEASURE_MOUNT:/var/lib/goldesel
+    network_mode: host
+    env_file:
+      - .env
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: autoheal-app
+    network_mode: none
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "true"
+      WATCHTOWER_REVIVE_STOPPED: "true"
+      WATCHTOWER_POLL_INTERVAL: 60
+      WATCHTOWER_LABEL_ENABLE: "true"
+
+  # Surfbars
+  ebesucher:
+    build:
+      context: ebesucher
+    <<: *default-flags
+    ports:
+      - "7543:7543"   # Debug Port for Firefox
+    environment:
+      - SURFBAR_NAME=$EBESUCHER_SURFBAR_NAME
+      - DEVICE_NAME=$DEVICE_NAME
+
+  adnade:
+    build:
+      context: adnade
+    <<: *default-flags
+    environment:
+      - USERNAME=$ADNADE_USERNAME
+      - DEVICE_NAME=$DEVICE_NAME
+
+  # Internet Sellers
+  honeygain:
+    image: honeygain/honeygain
+    command: -tou-accept -email "$HONEYGAIN_EMAIL" -pass "$HONEYGAIN_PASSWORD" -device "$DEVICE_NAME"
+    <<: *default-watchtower
+    healthcheck:
+      test: ["CMD-SHELL", "if [ $(ls -la /proc/$(pidof psclient)/fd | grep -c socket) -lt 3 ]; then exit 1; fi"]
+      start_period: 10m
+
+  earnapp:
+    build:
+      context: earnapp
+      args:
+        EARNAPP_ID: $DEVICE_NAME
+    <<: *default-flags
+    environment:
+      - ENTRYPOINT=/start.sh
+      - NETWORK_MEASURE_PROGRAM=earnapp
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+
+  pawns:
+    build:
+      context: pawns
+    <<: *default-flags
+    environment:
+      - PAWNS_EMAIL=$PAWNS_EMAIL
+      - PAWNS_PASSWORD=$PAWNS_PASSWORD
+      - PAWNS_DEVICE=$DEVICE_NAME
+      - ENTRYPOINT=/start.sh
+      - NETWORK_MEASURE_PROGRAM=pawns-cli
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+
+  traffmonetizer:
+    build:
+      context: traffmonetizer
+    <<: *default-flags
+    environment:
+      - TRAFFMONETIZER_TOKEN=$TRAFFMONETIZER_TOKEN
+      - TRAFFMONETIZER_DEVICE=$DEVICE_NAME
+      - ENTRYPOINT=/start.sh
+      - NETWORK_MEASURE_PROGRAM=Cli
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+
+  packetstream:
+    image: packetstream/psclient
+    <<: *default-watchtower
+    environment:
+      - CID=$CID
+      - ENTRYPOINT=/usr/local/bin/pslauncher
+      - NETWORK_MEASURE_PROGRAM=psclient
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+    healthcheck:
+      test: ["CMD-SHELL", "ls -la /proc/$(pidof psclient)/fd | grep -q socket"]
+
+  repocket:
+    image: repocket/repocket
+    <<: *default-watchtower
+    environment:
+      - RP_EMAIL=$RP_EMAIL
+      - RP_API_KEY=$RP_API_KEY
+      - ENTRYPOINT=node dist/index.js
+      - NETWORK_MEASURE_PROGRAM=node
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+    healthcheck:
+      test: ["CMD-SHELL", "if [ $(ls -la /proc/$(pidof node)/fd | grep -c socket) -lt 2 ]; then exit 1; fi"]
+
+  mysterium:
+    image: mysteriumnetwork/myst
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    network_mode: host
+    privileged: true
+    volumes:
+      - "/var/lib/mysterium-node:/var/lib/mysterium-node"
+    command:
+      - --traversal holepunching,upnp,manual
+      - --verbose
+      - service
+      - --agreed-terms-and-conditions
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  earnfm:
+    image: earnfm/earnfm-client
+    <<: *default-watchtower
+    environment:
+      - EARNFM_TOKEN=$EARNFM_TOKEN
+      - ENTRYPOINT=/app/earnfm_example
+      - NETWORK_MEASURE_PROGRAM=earnfm_example
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+    healthcheck:
+      test: ["CMD-SHELL", "ls -la /proc/$(pidof earnfm_example)/fd | grep -q socket"]
+
+  # TODO https://faq.packetshare.io/en/articles/10390974-how-much-can-i-earn-per-1gb
+  packetshare:
+    image: packetshare/packetshare
+    <<: *default-watchtower
+    command: -accept-tos -email=$PACKETSHARE_USERNAME -password=$PACKETSHARE_PASSWORD
+    environment:
+      - ENTRYPOINT=/app/Packetshare
+      - NETWORK_MEASURE_PROGRAM=Packetshare
+    entrypoint: /var/lib/goldesel/network_measurement_wrapper.sh
+    healthcheck:
+      test: ["CMD-SHELL", "ls -la /proc/$(pidof Packetshare)/fd | grep -q socket"]

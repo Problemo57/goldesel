@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldesel Dashboard</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Goldesel Dashboard</h1>
+            <p class="last-update">Letzte Aktualisierung: <span id="update-time">--:--:--</span></p>
+            <button id="refresh-btn" class="refresh-button"><i class="fas fa-sync-alt"></i> Aktualisieren</button>
+        </header>
+
+        <div class="summary-container">
+            <div class="summary-card">
+                <h2>Gesamtübersicht</h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Gesamt verdient (USD):</span>
+                        <span class="stat-value" id="total-earned">0.00 $</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Heute verdient (USD):</span>
+                        <span class="stat-value" id="today-earned">0.00 $</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Gesamt Daten:</span>
+                        <span class="stat-value" id="total-data">0 GB</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Heutige Daten:</span>
+                        <span class="stat-value" id="today-data">0 GB</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Aktive Quellen:</span>
+                        <span class="stat-value" id="active-sources">0/0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Einzelne Quellen</h2>
+        <p class="sort-info">Sortiert nach heutigen Einnahmen</p>
+        
+        <div id="sources-container" class="sources-container">
+            <!-- Quellen werden hier dynamisch eingefügt -->
+            <div class="loading">Lade Daten...</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Goldesel Dashboard</p>
+    </footer>
+
+    <script src="../static/js/dashboard.js"></script>
+</body>
+</html>
